@@ -19,6 +19,7 @@ void print_header(Header h);
 void print_map(int *map);
 
 Header *get_header(int *map);
+size_t maplen(int **map);
 void freemap(int **map);
 
 #endif

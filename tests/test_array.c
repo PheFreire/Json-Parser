@@ -161,3 +161,15 @@ void test_array_index_of_should_return_correct_value() {
   freemap(&array);
 }
 
+void test_should_return_array_length() {
+  int *array = NULL;
+  newmap(&array, 3);
+
+  append(&array, 1);
+  append(&array, 2);
+  append(&array, 3);
+
+  assert(maplen(&array) == 3);
+  freemap(&array);
+}
+

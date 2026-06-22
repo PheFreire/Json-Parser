@@ -221,5 +221,18 @@ void print_map(int *map) {
   printf("\n-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n");
 }
 
-// Fazer o replace by idx
-// Fazer o replace by value
+/**
+ * @brief Retrieves the current logical utilization count of the dynamic array.
+ * 
+ * Fetches the implicit shadow header object from the source array address space 
+ * to read and return the exact number of active elements currently populated 
+ * within the user-facing data segment.
+ *
+ * @param map Pointer to the user's array pointer structure to evaluate.
+ * @return size_t The total number of tracking indices currently utilized.
+ */
+size_t maplen(int **map) {
+  Header *loaded_header = get_header(* map);
+  return loaded_header->allocated;
+}
+
