@@ -57,14 +57,15 @@ size_t maplen(int **map);
  */
 #define newmap(map, size) do {                                       \
   Header *map_with_header = (Header *)realloc(                       \
-    (*(map)), sizeof(Header) + (sizeof(**(map)) * (size))                \
+    (*(map)), sizeof(Header) + (sizeof(**(map)) * (size))            \
   );                                                                 \
   if (map_with_header == NULL) {                                     \
     printf("Error on \"map_with_header\" allocation!\n");            \
     exit(1);                                                         \
   }                                                                  \
   map_with_header[0] = (Header){ .reserved_size=size, .allocated=0}; \
-  (*(map)) = (void *)(map_with_header + 1);                            \
+  (*(map)) = (void *)(map_with_header + 1);                          \
+  memset(*(map), 0, size * sizeof(**(map)));                            \
 } while(0)
 
 /**
@@ -185,5 +186,81 @@ size_t maplen(int **map);
   }                                                 \
   found_idx;                                        \
 })
+
+/**
+ * @brief Retrieves the current logical utilization count of the dynamic array.
+ * 
+ * Fetches the implicit shadow header object from the source array address space 
+ * to read and return the exact number of active elements currently populated 
+ * within the user-facing data segment.
+ *
+ * @param map Pointer to the user's array pointer structure to evaluate.
+ * @return size_t The total number of tracking indices currently utilized.
+ */
+#define maplen(map) (get_header(* (map))->allocated)
+
+/**
+ * @brief Prints out the raw structural metrics tracked inside a Header variable.
+ * 
+ * Outputs a clean terminal layout representing current maximum capacity limits (Reserved Space) 
+ * against real meaningful slots used (Allocated Data).
+ *
+ * @param h Copy of the specific runtime Header structure to inspect.
+ */
+#define print_header(h) do {                        \
+  printf("\n----------(Header)----------\n");       \
+  printf("Reserved Space: %zu\n", h.reserved_size); \
+  printf("Allocated Data: %zu\n", h.allocated);     \
+  printf("----------------------------\n");         \
+} while(0)
+
+/**
+ * @brief Renders a full terminal visualization detailing both header metrics and underlying array contents.
+ * 
+ * Fetches the implicit shadow header object from the source array address space and triggers 
+ * print_header(). Sequentially parses structural indexes, wrapping outputs into an itemized `[x, y, z]` layout.
+ *
+ * @param map The public array data reference pointer to trace visually.
+ */
+
+#define __print_map_wrapper(map, fmt, type_cast) do {                 \
+  Header *loaded_header = get_header(map);                            \
+  Header header = loaded_header[0];                                   \
+  print_header(header);                                               \
+  printf("\n----------(Map)----------\n");                            \
+  printf("[");                                                        \
+  for (size_t i = 0; i < header.reserved_size; i++) {                 \
+    printf(fmt, ((type_cast *)(map))[i]);                             \
+    if (i != (header.reserved_size - 1)) printf(", ");                \
+  }                                                                   \
+  printf("]\n");                                                      \
+  printf("-------------------------\n");                              \
+  printf("\n-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n");   \
+} while (0)
+
+static inline void __print_map_char(char *map) {
+  __print_map_wrapper(map, "%c", char);
+}
+
+static inline void __print_map_int(int *map) {
+  __print_map_wrapper(map, "%d", int);
+}
+
+static inline void __print_map_string(char **map) {
+  __print_map_wrapper(map, "%s", char *);
+}
+
+static inline void __print_map_size_t(size_t *map) {
+  __print_map_wrapper(map, "%zu", size_t);
+}
+
+#define print_map(map)                  \
+  _Generic((map),                       \
+    char*:   __print_map_char,          \
+    int*:    __print_map_int,           \
+    char**:  __print_map_string,        \
+    size_t*: __print_map_size_t,        \
+    default: __print_map_int            \
+  )(map)
 
 #endif
