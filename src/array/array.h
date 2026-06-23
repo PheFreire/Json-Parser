@@ -11,8 +11,6 @@ typedef struct {
   size_t allocated;
 } Header;
 
-int index_of(int **map, int value);
-
 void print_header(Header h);
 void print_map(int *map);
 
@@ -165,5 +163,27 @@ size_t maplen(int **map);
   free(header_ptr);                             \
   (*(map)) = NULL;                              \
 } while(0)
+
+/**
+ * @brief Executes a sequential linear scan through the array to find a specific value.
+ * 
+ * Iterates through array indices up to the current logically populated boundary, evaluating 
+ * items for an exact computational equality match against the target value.
+ *
+ * @param map Pointer to the user's array pointer structure to scan.
+ * @param value The query value sought after.
+ * @return Returns the tracking index of the initial match instance, or -1 if missing.
+ */
+#define index_of(map, value) ({                     \
+  Header *header = get_header(*(map));              \
+  int found_idx = -1;                               \
+  for (size_t i = 0; i != header->allocated; i++) { \
+    if ((*(map))[i] == (value)) {                   \
+      found_idx = (int)i;                           \
+      break;                                        \
+    }                                               \
+  }                                                 \
+  found_idx;                                        \
+})
 
 #endif

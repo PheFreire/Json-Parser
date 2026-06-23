@@ -4,24 +4,6 @@
 #include <string.h>
 
 /**
- * @brief Executes a sequential linear scan through the array to find a specific value.
- * 
- * Iterates through array indices up to the current logically populated boundary, evaluating 
- * items for an exact computational equality match against the target value.
- *
- * @param map Pointer to the user's array pointer structure to scan.
- * @param value The query value sought after.
- * @return Returns the tracking index of the initial match instance, or -1 if missing.
- */
-int index_of(int **map, int value) {
-  Header *header = get_header(* map);
-  for (size_t i = 0; i != header->allocated; i++) {
-    if ((* map)[i] == value) return i;
-  }
-  return -1;
-}
-
-/**
  * @brief Prints out the raw structural metrics tracked inside a Header variable.
  * 
  * Outputs a clean terminal layout representing current maximum capacity limits (Reserved Space) 
