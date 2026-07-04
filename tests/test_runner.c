@@ -7,6 +7,8 @@ void test_array_should_delete();
 void test_array_index_of_should_return_correct_value();
 void test_should_return_array_length();
 
+void test_hashmap_and_header_should_initialize_correctly();
+
 #define RUN_TEST(test_func) do {        \
   printf("[RUN] %s...\n", #test_func);  \
   test_func();                          \
@@ -24,6 +26,8 @@ int main() {
   RUN_TEST(test_array_should_delete);
   RUN_TEST(test_array_index_of_should_return_correct_value);
   RUN_TEST(test_should_return_array_length);
+
+  RUN_TEST(test_hashmap_and_header_should_initialize_correctly);
 
   printf("================================\n");
   printf("  SUCCESS: All tests passed!  \n");

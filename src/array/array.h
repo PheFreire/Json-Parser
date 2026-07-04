@@ -60,12 +60,12 @@ size_t maplen(int **map);
     (*(map)), sizeof(Header) + (sizeof(**(map)) * (size))            \
   );                                                                 \
   if (map_with_header == NULL) {                                     \
-    printf("Error on \"map_with_header\" allocation!\n");            \
+    printf("Error on \"newmap\" allocation!\n");                     \
     exit(1);                                                         \
   }                                                                  \
   map_with_header[0] = (Header){ .reserved_size=size, .allocated=0}; \
   (*(map)) = (void *)(map_with_header + 1);                          \
-  memset(*(map), 0, size * sizeof(**(map)));                            \
+  memset(*(map), 0, size * sizeof(**(map)));                         \
 } while(0)
 
 /**

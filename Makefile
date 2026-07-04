@@ -1,6 +1,6 @@
 # Compiler Variables
 CC = gcc
-CFLAGS = -Wall -Wextra -Isrc  # -Isrc allows using #include "folder/file.h"
+CFLAGS = -g -Wall -Wextra -Isrc  # -Isrc allows using #include "folder/file.h"
 
 # File Locations
 SRC_DIR = src
