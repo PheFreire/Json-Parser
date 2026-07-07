@@ -238,28 +238,29 @@ size_t maplen(int **map);
   printf("\n-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n");   \
 } while (0)
 
-static inline void __print_map_char(char *map) {
-  __print_map_wrapper(map, "%c", char);
+static inline void __print_map_char(char **map) {
+  __print_map_wrapper((* (map)), "%c", char);
 }
 
-static inline void __print_map_int(int *map) {
-  __print_map_wrapper(map, "%d", int);
+static inline void __print_map_int(int **map) {
+  __print_map_wrapper((* (map)), "%d", int);
 }
 
-static inline void __print_map_string(char **map) {
-  __print_map_wrapper(map, "%s", char *);
+static inline void __print_map_string(char ***map) {
+  __print_map_wrapper((* (map)), "%s", char *);
 }
 
-static inline void __print_map_size_t(size_t *map) {
-  __print_map_wrapper(map, "%zu", size_t);
+static inline void __print_map_size_t(size_t **map) {
+  __print_map_wrapper((* (map)), "%zu", size_t);
 }
 
+// Should receive the main pointer and not a pointer to the main pointer
 #define print_map(map)                  \
   _Generic((map),                       \
-    char*:   __print_map_char,          \
-    int*:    __print_map_int,           \
-    char**:  __print_map_string,        \
-    size_t*: __print_map_size_t,        \
+    char**:   __print_map_char,          \
+    int**:    __print_map_int,           \
+    char***:  __print_map_string,        \
+    size_t**: __print_map_size_t,        \
     default: __print_map_int            \
   )(map)
 
