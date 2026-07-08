@@ -7,7 +7,7 @@ typedef struct {
   size_t reserved_size;
   size_t allocated;
   char **keys;
-  size_t *arrival_order_idx;
+  size_t *keys_idx;
 } HashMapHeader;
 
 unsigned long hash_to_djb2(unsigned char *str);
