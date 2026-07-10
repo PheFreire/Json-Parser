@@ -2,12 +2,13 @@
 #include "hashmap/hashmap.h"
 #include "stdio.h"
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 int main() {
   int *map = NULL;
   
-  new_hmap(&map, 300);
-  hmap_add(&map, "pato", 10);
-  hmap_add(&map, "abc", 11);
+  new_hmap(&map);
+
+  print_hmap(&map);
 }

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define BASE_HMAP_SIZE 32
 
 HashMapHeader *get_hmap_header(int **map_ptr) {
   return (((HashMapHeader *)(*(map_ptr))) - 1);
@@ -28,25 +29,25 @@ void *__instanciate_hmap_pointer(size_t ptr_size, char *ptr_name) {
   return ptr;
 }
 
-void new_hmap(int **map_ptr, size_t count) {
+void new_hmap(int **map_ptr) {
   if (map_ptr == NULL || (*(map_ptr)) != NULL) {
     printf("Error HashMap already initialized!\n");
     exit(1);
   }
 
   void *hmap = __instanciate_hmap_pointer(
-    (sizeof(**(map_ptr)) * (count)) + sizeof(HashMapHeader), "HashMap"
+    (sizeof(**(map_ptr)) * (BASE_HMAP_SIZE)) + sizeof(HashMapHeader), "HashMap"
   );
   size_t *keys_idx = __instanciate_hmap_pointer(
-    (sizeof(size_t) * count), "HashMap Keys Idx"
+    (sizeof(size_t) * (BASE_HMAP_SIZE)), "HashMap Keys Idx"
   );
   char **keys = __instanciate_hmap_pointer(
-    (sizeof(char *) * count), "HashMap Keys"
+    (sizeof(char *) * (BASE_HMAP_SIZE)), "HashMap Keys"
   );
 
   HashMapHeader *header = (HashMapHeader *)hmap;
   header[0] = (HashMapHeader){ 
-    .reserved_size=(count), 
+    .reserved_size=(BASE_HMAP_SIZE),
     .allocated=0, 
     .keys=keys, 
     .keys_idx=keys_idx,
@@ -66,12 +67,13 @@ void print_hmap_header(HashMapHeader **header_ptr) {
 
 void print_hmap(int **hmap_ptr) {
   HashMapHeader *header = get_hmap_header(hmap_ptr);
+  int *hmap = (*(hmap_ptr));
 
-  printf("\n----------------------------\n\n");
+  print_hmap_header(&header);
   printf("{");
   for (size_t i=0; i < header->allocated; i++) {
-    size_t idx = header->keys_idx[i]; 
-    printf("\n  %s: %d, ", header->keys[idx], (*(hmap_ptr))[idx]);
+    size_t idx = header->keys_idx[i];
+    printf("\n  %s: %d, ", header->keys[idx], hmap[idx]);
   }
   if (header->allocated > 0) { printf("\n"); }
   printf("}\n");
@@ -109,62 +111,49 @@ void _dinamic_expand_hmap(int **map_ptr) {
 
   HashMapHeader *new_header = (HashMapHeader *)new_hmap;
   new_header[0] = (HashMapHeader){ 
-    .reserved_size=new_count, 
-    .allocated=hmap_header->allocated, 
-    .keys=new_keys, 
+    .reserved_size=new_count,
+    .allocated=hmap_header->allocated,
+    .keys=new_keys,
     .keys_idx=new_keys_idx,
   };
 
   new_hmap = (void *)(new_header + 1);
   
-  for (size_t i=0; i < hmap_header->reserved_size; i++) {
+  for (size_t i=0; i < hmap_header->allocated; i++) {
     size_t key_idx_by_arrive_order = hmap_header->keys_idx[i];
 
     char *key = hmap_header->keys[key_idx_by_arrive_order];
-    size_t new_hash = hash_to_djb2((unsigned char *)(key)) % new_count;
+    size_t new_hash = (hash_to_djb2((unsigned char *)(key)) % new_count);
 
     new_keys[new_hash] = key;
     memcpy(
       (char *)new_hmap + (new_hash * ptr_element_size),
-      (char *)(*map_ptr) + (key_idx_by_arrive_order * ptr_element_size),
+      (char *)(* map_ptr) + (key_idx_by_arrive_order * ptr_element_size),
       ptr_element_size
     );
 
     new_keys_idx[i] = new_hash;
+    printf("%zu\n", new_hash);
   }
-
+  
   __free_hmap_header(map_ptr);
+  (*(map_ptr)) = new_hmap;
 }
 
 void hmap_add(int **map_ptr, char *key, int value) {
   HashMapHeader *hmap_header = get_hmap_header(map_ptr);
 
-  size_t hash_key = hash_to_djb2((unsigned char *)(key)) % hmap_header->reserved_size;
+  if (hmap_header->allocated == hmap_header->reserved_size) {
+    _dinamic_expand_hmap(map_ptr);
+    hmap_header = get_hmap_header(map_ptr);
+  }
 
+  size_t hash_key = (hash_to_djb2((unsigned char *)(key)) % hmap_header->reserved_size);
+  
+  print_hmap(map_ptr);
+  hmap_header->keys_idx[hmap_header->allocated] = hash_key;
   (*(map_ptr))[hash_key] = value;
   hmap_header->keys[hash_key] = key;
-  hmap_header->keys_idx[hmap_header->allocated] = hash_key;
-
   hmap_header->allocated++;
 }
 
-
-// O get_header da array deveria pedir ponteiro do ponteiro
-// O print_header da array deveria pedir ponteiro do ponteiro
-// Tirar as informacoes do Header do print_map da array
-// Implementar verificacao do ponteiro nao ser NULL e possuir um header no inicio de todo fluxo de array e hashmap
-
-// Implementar o _dinamic_expand_hmap (X)
-  // Criar novo keys vazio com tamanho novo 
-  // Criar novo hmap vazio com tamanho novo
-  // Criar novo keys_idx com tamanho novo
-
-  // Iterar cada elemento de "idx for idx in keys_idx"
-    // Iterar o ponteiro de keys antigo com cada uma das idx de keys_idx "keys[idx]"
-    // Gerar o novo valor de hash com a key "new_hash = hash_to_djb2(keys[idx])"
-    // Alocar a key no novo keys com a posicao de index da key sendo o novo valor de hash "new_keys[new_hash] = keys[idx]"
-    // Alocar o value do hmap no novo hmap com a posicao de index do value sendo o novo valor de hash "new_hmap[new_hash] = hmap[idx]"
-    // Atualizar os valores de keys_idx para os novos valores de hash "keys_idx[idx] = hash_to_djb2(keys[idx])"
-  
-  // Dar free nos ponteiros antigos
-  // Atualizar os headers
