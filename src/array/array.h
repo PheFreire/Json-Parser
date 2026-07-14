@@ -1,6 +1,7 @@
 #ifndef ARRAY_H
 #define ARRAY_H
 
+#include "utils/delete_from_ptr.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -142,13 +143,7 @@ size_t maplen(int **map);
     printf("Invalid Index Error: Could Not Delete Element");                          \
     exit(1);                                                                          \
   }                                                                                   \
-  uint8_t *map_ptr = (uint8_t *)(*(map));                                             \
-  size_t data_size = sizeof(**(map));                                                 \
-  uint8_t *dest = (map_ptr + ((idx) * data_size));                                    \
-  uint8_t *src = (map_ptr + (((idx) + 1) * data_size));                               \
-  size_t size_elements_to_move = ((header->allocated - (idx) - 1) * data_size);       \
-  memmove(dest, src, size_elements_to_move);                                          \
-  memset((map_ptr + ((header->allocated - 1) * data_size)), 0, data_size);            \
+  del_element_and_resize((void **)map, idx, sizeof(**(map)), header->allocated);      \
   header->allocated--;                                                                \
 } while(0)
 
@@ -273,13 +268,13 @@ static inline void __print_map_size_t(size_t **map) {
 }
 
 // Should receive the main pointer and not a pointer to the main pointer
-#define print_map(map)                  \
-  _Generic((map),                       \
-    char**:   __print_map_char,          \
-    int**:    __print_map_int,           \
-    char***:  __print_map_string,        \
-    size_t**: __print_map_size_t,        \
-    default: __print_map_int            \
+#define print_map(map)                    \
+  _Generic((map),                         \
+    char**:   __print_map_char,           \
+    int**:    __print_map_int,            \
+    char***:  __print_map_string,         \
+    size_t**: __print_map_size_t,         \
+    default: __print_map_int              \
   )(map)
 
 #endif
