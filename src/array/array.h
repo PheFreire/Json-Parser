@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 typedef struct {
   size_t reserved_size;
@@ -129,23 +130,40 @@ size_t maplen(int **map);
 /**
  * @brief Removes an item from the array at the designated index.
  * 
- * Validates the targeted index constraints against logical boundary allocations. If valid, 
- * leverages a memmove call block to shift subsequent items leftwards by one unit, 
- * overwriting the deletion target and decrementing the size counter.
+ * Validates the targeted index constraints against logical boundary allocations. If valid,
+ * overwrite the deletion target and decrement the size counter.
  *
  * @param map Pointer to the user's array pointer undergoing element deletion.
  * @param idx Zero-indexed numeric identifier of the item to discard.
  */
-#define del(map, idx) do {                                                    \
-  Header *header = get_header(*(map));                                        \
-  if ((idx) >= header->allocated) {                                           \
-    printf("Invalid Index Error: Could Not Delete Element");                  \
-    exit(1);                                                                  \
-  }                                                                           \
-  size_t size_target_til_end = (header->allocated - (idx)) * sizeof(**(map)); \
-  int *ptr_after_target = (*(map)) + (idx) + 1;                               \
-  memmove((*(map)) + (idx), ptr_after_target, size_target_til_end);           \
-  header->allocated--;                                                        \
+#define del(map, idx) do {                                                            \
+  Header *header = get_header(*(map));                                                \
+  if ((idx) >= header->allocated) {                                                   \
+    printf("Invalid Index Error: Could Not Delete Element");                          \
+    exit(1);                                                                          \
+  }                                                                                   \
+  uint8_t *map_ptr = (uint8_t *)(*(map));                                             \
+  size_t data_size = sizeof(**(map));                                                 \
+  uint8_t *dest = (map_ptr + ((idx) * data_size));                                    \
+  uint8_t *src = (map_ptr + (((idx) + 1) * data_size));                               \
+  size_t size_elements_to_move = ((header->allocated - (idx) - 1) * data_size);       \
+  memmove(dest, src, size_elements_to_move);                                          \
+  memset((map_ptr + ((header->allocated - 1) * data_size)), 0, data_size);            \
+  header->allocated--;                                                                \
+} while(0)
+
+/**
+ * @brief Removes an pointer from the array at the designated index.
+ * 
+ * Validates the targeted index constraints against logical boundary allocations. If valid, 
+ * overwrite the deletion target, free the pointer and decrement the size counter.
+ *
+ * @param map Pointer to the user's array pointer undergoing element deletion.
+ * @param idx Zero-indexed numeric identifier of the item to discard.
+ */
+#define del_ptr(map, idx) do {                                                        \
+  free((*(map))[idx]);                                                                \
+  del(map, idx);                                                                      \
 } while(0)
 
 /**

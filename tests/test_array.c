@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 #include <time.h>
 #include "array/array.h"
 
@@ -136,9 +137,36 @@ void test_array_should_delete() {
   assert(header_ptr->allocated == 2);
   assert(header_ptr->reserved_size == 3);
 
+
   del(&array, 1);
   assert(array[0] == 2);
   assert(array[1] == 0);
+  assert(header_ptr->allocated == 1);
+  assert(header_ptr->reserved_size == 3);
+
+  freemap(&array);
+}
+
+void test_ptr_array_should_delete() {
+  char **array = NULL;
+  newmap(&array, 3);
+
+  Header *header_ptr = get_header(array);
+
+  append(&array, "pato1");
+  append(&array, "pato2");
+  append(&array, "pato3");
+  
+  del_ptr(&array, 0);
+  assert(strcmp(array[0], "pato2") == 0);
+  assert(strcmp(array[1], "pato3") == 0);
+  assert(header_ptr->allocated == 2);
+  assert(header_ptr->reserved_size == 3);
+
+
+  del_ptr(&array, 1);
+  assert(strcmp(array[0], "pato2") == 0);
+  assert(array[1] == NULL);
   assert(header_ptr->allocated == 1);
   assert(header_ptr->reserved_size == 3);
 
