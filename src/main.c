@@ -13,6 +13,5 @@ int main() {
   hmap_insert(&map, "pato3", 1);
   print_hmap(&map);
 
-  hmapdel(&map, "pato2");
   print_hmap(&map);
 }
