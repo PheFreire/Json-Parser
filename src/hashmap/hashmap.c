@@ -29,7 +29,7 @@ void *_instanciate_hmap_pointer(size_t ptr_size, char *ptr_name) {
   return ptr;
 }
 
-void print_hmap_header(HashMapHeader **header_ptr) {
+void hmap_print_header(HashMapHeader **header_ptr) {
   HashMapHeader *header = (HashMapHeader *)(*(header_ptr));
 
   printf("\n----------(Header)----------\n");

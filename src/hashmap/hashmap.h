@@ -34,6 +34,16 @@ typedef struct {
 } HashMapHeader;
 
 /**
+ * @brief Prints a diagnostic dump of the hidden shadow header's bookkeeping state.
+ *
+ * Writes the header's reserved size, logical usage count, and the full contents of the
+ * keys_idx_hmap and keys_idx arrays to stdout, framed between separator lines.
+ *
+ * @param header_ptr Pointer to the hidden HashMapHeader pointer to dump.
+ */
+void hmap_print_header(HashMapHeader **header_ptr);
+
+/**
  * @brief Allocates and zero-initializes a memory block bound to a hashmap's internal bookkeeping arrays.
  *
  * Factory for instanciate each pointer vinculated to hmap header
@@ -275,29 +285,6 @@ unsigned long hash_to_djb2(unsigned char *str);
 } while(0)
 
 /**
- * @brief Renders a full terminal visualization of an int-valued hashmap's header and key/value contents.
- *
- * Fetches the implicit shadow header object from the source hashmap address space, triggers
- * print_hmap_header(), and prints each entry as `key: value` following the insertion order
- * tracked by keys_idx.
- *
- * @param hmap_ptr The public hashmap data reference pointer to trace visually.
- */
-#define print_hmap(hmap_ptr) do {                                             \
-  HashMapHeader *header = get_hmap_header(hmap_ptr);                          \
-  int *hmap = (*(hmap_ptr));                                                  \
-                                                                              \
-  print_hmap_header(&header);                                                 \
-  printf("{");                                                                \
-  for (size_t i=0; i < header->allocated; i++) {                              \
-    size_t idx = header->keys_idx[i];                                         \
-    printf("\n  %s: %d, ", header->keys[idx], hmap[idx]);                     \
-  }                                                                           \
-  if (header->allocated > 0) { printf("\n"); }                                \
-  printf("}\n");                                                              \
-} while (0)
-
-/**
  * @brief Populates dst with a newly allocated array of the hashmap's values in insertion order.
  *
  * Requires dst to be NULL on entry, aborting the program otherwise. Reads the hidden shadow
@@ -329,13 +316,81 @@ unsigned long hash_to_djb2(unsigned char *str);
 } while(0)
 
 /**
- * @brief Prints out the raw structural metrics and key bookkeeping arrays tracked inside a HashMapHeader.
+ * @brief Prints the hashmap header followed by every key/value pair, formatted per the given type cast.
  *
- * Outputs current capacity limits (Reserved Space), real slots used (Allocated Data), and the
- * full contents of the keys_idx_hmap and keys_idx arrays.
+ * Dumps the hidden shadow header via hmap_print_header, then walks keys_idx in arrival order,
+ * printing each key alongside its value read from hmap_ptr and cast to type_cast, formatted
+ * according to fmt. Wrapped by the type-specific static inline print helpers below, which are
+ * in turn dispatched by the hmap_print macro via _Generic.
  *
- * @param header_ptr Pointer to the HashMapHeader pointer to inspect.
+ * @param hmap_ptr The user's hashmap data pointer to read keys and values from.
+ * @param fmt The printf-style format string used for each "key: value" line.
+ * @param type_cast The C type to cast each raw value to before printing.
  */
-void print_hmap_header(HashMapHeader **header_ptr);
+#define __hmap_print_wrapper(hmap_ptr, fmt, type_cast) do {            \
+  HashMapHeader *header = get_hmap_header(&(hmap_ptr));                \
+  hmap_print_header(&header);                                          \
+  printf("{\n");                                                       \
+  for (size_t i=0; i < header->allocated; i++) {                       \
+    size_t idx = header->keys_idx[i];                                  \
+    printf(fmt, header->keys[idx], ((type_cast *)(hmap_ptr))[idx]);    \
+    if (i != (header->reserved_size - 1)) printf(", \n");              \
+  }                                                                    \
+  printf("}\n");                                                       \
+} while (0)
+
+/**
+ * @brief Prints a hashmap of char values, dispatched by hmap_print for the char** type.
+ *
+ * @param hmap Pointer to the user's char hashmap pointer to print.
+ */
+static inline void __hmap_print_char(char **hmap) {
+  __hmap_print_wrapper((* (hmap)), "  %s: %c", char);
+}
+
+/**
+ * @brief Prints a hashmap of int values, dispatched by hmap_print for the int** type.
+ *
+ * @param hmap Pointer to the user's int hashmap pointer to print.
+ */
+static inline void __hmap_print_int(int **hmap) {
+  __hmap_print_wrapper((* (hmap)), "  %s: %d", int);
+}
+
+/**
+ * @brief Prints a hashmap of string values, dispatched by hmap_print for the char*** type.
+ *
+ * @param hmap Pointer to the user's string hashmap pointer to print.
+ */
+static inline void __hmap_print_string(char ***hmap) {
+  __hmap_print_wrapper((* (hmap)), "  %s: %s", char *);
+}
+
+/**
+ * @brief Prints a hashmap of size_t values, dispatched by hmap_print for the size_t** type.
+ *
+ * @param hmap Pointer to the user's size_t hashmap pointer to print.
+ */
+static inline void __hmap_print_size_t(size_t **hmap) {
+  __hmap_print_wrapper((* (hmap)), "  %s: %zu", size_t);
+}
+
+/**
+ * @brief Prints the hashmap's header and all key/value pairs, dispatching on the value type.
+ *
+ * Uses _Generic to select the matching __hmap_print_* helper based on hmap's type
+ * (char**, int**, char***, size_t**), falling back to the int printer by default.
+ * Should receive the main pointer and not a pointer to the main pointer.
+ *
+ * @param hmap The user's hashmap data pointer to print.
+ */
+#define hmap_print(hmap)              \
+  _Generic((hmap),                    \
+    char**:   __hmap_print_char,      \
+    int**:    __hmap_print_int,       \
+    char***:  __hmap_print_string,    \
+    size_t**: __hmap_print_size_t,    \
+    default: __hmap_print_int         \
+  )(hmap)
 
 #endif

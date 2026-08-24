@@ -15,4 +15,14 @@ void test_hashmap_and_header_should_initialize_correctly() {
   int *h_map = NULL;
 
   new_hmap(&h_map, 32);
+
+  char *h_map_2 = NULL;
+  new_hmap(&h_map_2, 64);
+
+  hmap_insert(&h_map_2, "letter", 'p');
+  
+  // TODO: Transform `print_hmap` into dinamic function using define generic statement 
+  // Change hmap function names to start alway with `hmap_`
+  // print_hmap(&h_map_2);
+
 }

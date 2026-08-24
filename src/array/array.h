@@ -268,7 +268,7 @@ static inline void __print_map_size_t(size_t **map) {
 }
 
 // Should receive the main pointer and not a pointer to the main pointer
-#define print_map(map)                    \
+#define print_hmap(map)                    \
   _Generic((map),                         \
     char**:   __print_map_char,           \
     int**:    __print_map_int,            \
