@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "utils/delete_from_ptr.h"
 #define BASE_HMAP_SIZE 32
 
 #include <string.h>
@@ -13,7 +14,9 @@
  * @brief Hidden shadow header tracking a dynamic hashmap's capacity, usage and key bookkeeping.
  *
  * @param reserved_size Total number of hash slots currently allocated for the hashmap.
+ *
  * @param allocated Number of key/value pairs currently populated in the hashmap.
+ *
  * @param keys Array of hashmap keys (char*).
  * Each key (char *) is stored at the index corresponding to its hash (size_t),
  * computed as size_t hash_to_djb2(key).
@@ -212,20 +215,22 @@ unsigned long hash_to_djb2(unsigned char *str);
  * @param map_ptr Pointer to the user's hashmap pointer undergoing element deletion.
  * @param key The key (char *) identifying the entry to discard.
  */
-#define hmapdel(map_ptr, key) do {                                                    \
-  HashMapHeader *hmap_header = get_hmap_header(map_ptr);                              \
-  size_t hash = (hash_to_djb2((unsigned char *)(key)) % hmap_header->reserved_size);  \
-  size_t keys_idx_pos = hmap_header->keys_idx_hmap[hash];                             \
-  del_element(((void **)map_ptr), hash, sizeof(**(map_ptr)));                         \
-  del_element((void **)&hmap_header->keys, hash, sizeof(char *));                     \
-  del_element((void **)&hmap_header->keys_idx, keys_idx_pos, sizeof(size_t));         \
-  del_element_and_resize(                                                             \
-    (void **)&hmap_header->keys_idx,                                                  \
-    keys_idx_pos,                                                                     \
-    sizeof(size_t),                                                                   \
-    hmap_header->allocated                                                            \
-  );                                                                                  \
-  hmap_header->allocated--;                                                           \
+#define hmapdel(map_ptr, key) do {                                                      \
+  HashMapHeader *hmap_header = get_hmap_header(map_ptr);                                \
+  size_t hash = (hash_to_djb2((unsigned char *)(key)) % hmap_header->reserved_size);    \
+  if (hmap_header->keys[hash] != NULL) {                                                \
+    size_t keys_idx_pos = hmap_header->keys_idx_hmap[hash];                             \
+    del_element(((void **)map_ptr), hash, sizeof(**(map_ptr)));                         \
+    del_element((void **)&hmap_header->keys, hash, sizeof(char *));                     \
+    del_element((void **)&hmap_header->keys_idx, keys_idx_pos, sizeof(size_t));         \
+    del_element_and_resize(                                                             \
+      (void **)&hmap_header->keys_idx,                                                  \
+      keys_idx_pos,                                                                     \
+      sizeof(size_t),                                                                   \
+      hmap_header->allocated                                                            \
+    );                                                                                  \
+    hmap_header->allocated--;                                                           \
+  }                                                                                     \
 } while(0)
 
 /**
@@ -241,18 +246,20 @@ unsigned long hash_to_djb2(unsigned char *str);
  * @param map_ptr Pointer to the user's hashmap pointer to read keys from.
  * @param dst Pointer variable, passed as NULL, that will receive the allocated, NULL-terminated array of keys.
  */
-#define get_hmap_keys(map_ptr, dst) do {                       \
-  if (dst != NULL) {                                           \
-    printf("Error on %s allocation!\n", "Hmap Keys ptr");      \
-    exit(1);                                                   \
-  }                                                            \
-  HashMapHeader *hmap_header = get_hmap_header(map_ptr);       \
-  dst = calloc(hmap_header->allocated + 1, sizeof(char *));    \
-  for (size_t i=0; i < hmap_header->allocated; i++) {          \
-    size_t idx = hmap_header->keys_idx[i];                     \
-    dst[i] = hmap_header->keys[idx];                           \
-  }                                                            \
-  dst[hmap_header->allocated + 1] = NULL;                      \
+#define get_hmap_keys(map_ptr, dst) do {                         \
+  if (dst != NULL) {                                             \
+    printf("Error on %s allocation!\n", "Hmap Keys ptr");        \
+    exit(1);                                                     \
+  }                                                              \
+  HashMapHeader *hmap_header = get_hmap_header(map_ptr);         \
+  if (hmap_header->allocated > 0) {                              \
+    dst = calloc(hmap_header->allocated + 1, sizeof(char *));    \
+    for (size_t i=0; i < hmap_header->allocated; i++) {          \
+      size_t idx = hmap_header->keys_idx[i];                     \
+      dst[i] = hmap_header->keys[idx];                           \
+    }                                                            \
+    dst[hmap_header->allocated + 1] = NULL;                      \
+  }                                                              \
 } while(0)
 
 /**
