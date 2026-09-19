@@ -1,4 +1,3 @@
-#include "array/array.h"
 #include "hashmap/hashmap.h"
 #include <assert.h>
 #include <stdbool.h>
@@ -29,6 +28,8 @@ void test_hashmap_and_header_should_initialize_correctly() {
     assert(header->keys_idx[i] == 0);
     assert(header->keys_idx_hmap[i] == 0);
   }
+
+  freehmap(&h_map);
 }
 
 void test_hash_function_should_generate_same_value_to_same_input() {
@@ -40,8 +41,20 @@ void test_hash_function_should_generate_same_value_to_same_input() {
   size_t different_hash_value_1 = (size_t)hash_to_djb2(value_2);
   size_t different_hash_value_2 = (size_t)hash_to_djb2(value_2);
 
-
   assert(hash_value_1 == hash_value_2);
   assert(different_hash_value_1 == different_hash_value_2);
   assert(hash_value_1 != different_hash_value_1);
+}
+
+// Test hmap insert shoud add key in the right place, 
+// key_idx on the right place and hmap value on the right place and header should update correctly
+void test_hashmap_insert_should_position_hash_into_the_correct_place_on_key_idx() {
+  int *h_map = NULL;
+  new_hmap(&h_map, 100);
+
+  char* key = "duck-test";
+  size_t hash = (size_t)hash_to_djb2((unsigned char *)key);
+
+  hmap_insert(&h_map, key, 10);
+  freehmap(&h_map);
 }
