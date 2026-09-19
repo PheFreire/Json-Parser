@@ -140,11 +140,27 @@ unsigned long hash_to_djb2(unsigned char *str);
  * @param map_ptr Pointer to the user's hashmap pointer targeted for destruction.
  */
 #define __free_hmap_header(map_ptr) do {                                      \
-  HashMapHeader *hmap_header = get_hmap_header(map_ptr);                      \
+  HashMapHeader *hmap_header = get_hmap_header((map_ptr));                    \
   free(hmap_header->keys_idx_hmap);                                           \
   free(hmap_header->keys_idx);                                                \
   free(hmap_header->keys);                                                    \
   free(hmap_header);                                                          \
+} while(0)
+
+/**
+ * @brief Deallocates a hashmap's along with its shadow header.
+ *
+ * Locates the hidden HashMapHeader via reverse pointer arithmetic and releases the
+ * keys_idx_hmap, keys_idx, keys arrays and the header block itself from the heap
+ * And then releases the user's external pointer. 
+ *
+ * @param map_ptr Pointer to the user's hashmap pointer targeted for destruction.
+ */
+#define freehmap(map_ptr) do {                      \
+  if ((map_ptr) != NULL && *(map_ptr) != NULL) {    \
+    __free_hmap_header((map_ptr));                  \
+    *(map_ptr) = NULL;                              \
+  }                                                 \
 } while(0)
 
 /**
