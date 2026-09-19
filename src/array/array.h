@@ -171,11 +171,12 @@ size_t maplen(int **map);
  *
  * @param map Pointer to the user's array pointer targeted for destruction.
  */
-#define freemap(map) {                          \
-  if ((map) == NULL || *(map) == NULL) return;  \
-  Header *header_ptr = get_header(* (map));     \
-  free(header_ptr);                             \
-  (*(map)) = NULL;                              \
+#define freemap(map) {                           \
+  if ((map) != NULL && *(map) != NULL) {         \
+    Header *header_ptr = get_header(* (map));    \
+    free(header_ptr);                            \
+    (*(map)) = NULL;                             \
+  }                                              \
 } while(0)
 
 /**
